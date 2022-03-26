@@ -1,0 +1,80 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+# env:
+#   CARGO_TERM_COLOR: always
+
+jobs:
+  build-test:
+    strategy:
+      fail-fast: false
+
+      matrix:
+        os:
+          - { prettyname: Windows, fullname: windows-latest }
+          - { prettyname: macOS, fullname: macos-latest }
+          - { prettyname: Linux, fullname: ubuntu-latest }
+
+        threadingMode: [ 'MultiThreaded' ]
+
+    timeout-minutes: 60
+
+    runs-on: ${{matrix.os.fullname}}
+
+    steps:
+      - uses: actions/checkout@v2
+
+      # - name: Build
+      #   run: cargo build --verbose
+
+      # - name: Run tests
+      #   run: cargo test --verbose
+
+  lint:
+    name: Formatter
+
+    needs: build-test
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      # - name: Install Rust
+      #   run: |
+      #     rustup update stable
+      #     rustup default stable
+      #     rustup component add rustfmt
+      #     rustup component add clippy
+
+      # - name: Check formatting
+      #   run: cargo fmt --all -- --check
+
+      # - name: Check code for possible improvements
+      #   run: cargo clippy -- -D warnings
+
+      # Prepare the Pull Request Payload artifact. If this fails, we
+      # we fail silently using the `continue-on-error` option. It's
+      # nice if this succeeds, but if it fails for any reason, it
+      # does not mean that our lint-test checks failed.
+      - name: Prepare Pull Request Payload artifact
+        id: prepare-artifact
+        if: always() && github.event_name == 'pull_request'
+        continue-on-error: true
+        run: cat $GITHUB_EVENT_PATH | jq '.pull_request' > pull_request_payload.json
+
+      # This only makes sense if the previous step succeeded. To
+      # get the original outcome of the previous step before the
+      # `continue-on-error` conclusion is applied, we use the
+      # `.outcome` value. This step also fails silently.
+      - name: Upload a Build Artifact
+        if: always() && steps.prepare-artifact.outcome == 'success'
+        continue-on-error: true
+        uses: actions/upload-artifact@v2
+        with:
+          name: pull-request-payload
+          path: pull_request_payload.json

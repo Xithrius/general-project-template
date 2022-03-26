@@ -1,0 +1,10 @@
+version: 2
+
+updates:
+  # https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file#package-ecosystem
+  # - package-ecosystem:
+  #   directory: "/"
+  #   schedule:
+  #     interval: daily
+  #     time: "07:00"
+  #   open-pull-requests-limit: 5
